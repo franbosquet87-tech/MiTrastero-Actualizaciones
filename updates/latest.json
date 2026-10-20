@@ -1,6 +1,6 @@
 {
-  "revision": 1792530000,
-  "version": "V2.2.9",
-  "sha256": "67661b4c8aa2b9bb37e351dd5168fea4fb9436555da4a02ea88ea5f482d80f38",
-  "notes": "Biblioteca offline de 296 iconos de colores para categorías. Conserva el logo original, el inventario y todas las funciones."
+  "revision": 1792538400,
+  "version": "V2.2.10",
+  "sha256": "dfa57c44fcb43dbccdd3190f20c5d4dba2d1cdc67c8bde8932add77c3200154e",
+  "notes": "Iconos del banco perfectamente centrados en las tarjetas de Categorías. Se mantienen inventario, copias de seguridad y todas las funciones de V2.2.9."
 }
