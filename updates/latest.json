@@ -1,6 +1,6 @@
 {
-  "revision": 1792522500,
-  "version": "V2.2.5 (ajuste visual)",
-  "sha256": "8b0866734045ce809811cb56ba499d193797e6ce884d8ff20ca64c79f673ba50",
-  "notes": "Elimina el texto «Abriendo Mi Trastero…» y recupera el ancho completo en Android. Conserva el diseño y todos tus datos."
+  "revision": 1792524600,
+  "version": "V2.2.7 (logo centrado)",
+  "sha256": "3ea71865ce1afe37f40d5d03ed5783702a42ecdf1293140046dd8b8caa50a493",
+  "notes": "Logo aprobado centrado, igual en el icono Android y en el encabezado. Sin cambios en datos ni funciones."
 }
