@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f3f5f8">
-<title>Mi Trastero · V2.2.11</title>
+<title>Mi Trastero · V2.2.12</title>
 <style>
 :root{--bg:#f5f6f3;--ink:#142b28;--mut:#7c8983;--green:#123c34;--green2:#1e6557;--line:#e7ece7;--accent:#d9f2ad;--orange:#f1ba83;--white:#fff;--shadow:0 12px 35px rgba(33,64,47,.07)}
 *{box-sizing:border-box}html{background:#e9efec}body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);-webkit-tap-highlight-color:transparent}button,input,select{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #8db2a2;outline-offset:2px}button{border:0}svg{display:inline-block;vertical-align:middle;flex-shrink:0}.icon{width:21px;height:21px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.tiny{width:16px;height:16px}.app{max-width:480px;margin:auto;background:var(--bg);min-height:100dvh;box-shadow:0 12px 60px #153b2318;position:relative}.page{padding:0 22px 112px;min-height:80vh;animation:appear .24s ease}@keyframes appear{from{opacity:.1;transform:translateY(8px)}to{opacity:1;transform:none}}
@@ -292,6 +292,10 @@ body{background:#e9edf3;color:var(--ink);font-family:Inter,ui-sans-serif,-apple-
 .place-manage{width:47px;min-width:47px;display:grid;place-items:center;border:1px solid #e1e6ed;border-radius:12px;background:#fff;color:#5d708c;box-shadow:0 6px 20px rgba(30,41,59,.04)}
 .place-manage .icon{width:19px;height:19px}
 .location-row .location-card .num{font-size:11px}
+.default-place-card{padding:15px;margin:12px 0 18px;background:#f2f7f2;border:1px solid #dce9de;border-radius:15px}
+.default-place-card label,.default-place-card strong{display:block;font-size:13px;font-weight:800;color:#345d48;margin:0 0 9px}
+.default-place-card .field{width:100%;min-height:46px;background:#fff}
+.default-place-card small{display:block;color:#667b6c;font-size:11px;line-height:1.5;margin-top:9px}
 .location-row .location-card .chevron{width:14px;height:14px;margin:0}
 @media(max-width:365px){.location-row{gap:6px}.location-row .location-card{gap:7px;padding:10px}.place-manage{width:42px;min-width:42px}.location-row .location-icon{width:36px;height:36px}}
 </style>
@@ -661,8 +665,8 @@ const CAT_DEMO=[
   {id:'c-garden',parentId:null,name:'Jardinería',emoji:'🌱',iconKey:'seedling',iconGroup:'Jardinería'},
   {id:'c-tech',parentId:null,name:'Informática',emoji:'💻',iconKey:'computer',iconGroup:'Informática y electrónica'}
 ];
-const KEY='mi_trastero_personal_items_v1',CAT_KEY='mi_trastero_personal_categories_v1',PLACES_KEY='mi_trastero_personal_places_v1';
-const DEFAULT_PLACES=['Trastero principal','Garaje','Casa de mis padres'];
+const KEY='mi_trastero_personal_items_v1',CAT_KEY='mi_trastero_personal_categories_v1',PLACES_KEY='mi_trastero_personal_places_v1',DEFAULT_PLACE_KEY='mi_trastero_personal_default_place_v1';
+const DEFAULT_PLACES=[]; // Solo aparecen lugares creados o utilizados realmente; sin lugares de ejemplo inventados.
 // Los previews de archivos HTML incrustados pueden tener origen opaco y bloquear localStorage.
 // En ese caso ofrecemos una DEMO EN MEMORIA, avisando con claridad de que NO es persistente.
 function supportsPersistentStorage(){
@@ -673,7 +677,7 @@ let temporaryStorageMode=!supportsPersistentStorage();
 function syncStorageNotice(){const notice=document.getElementById('storage-notice');if(notice)notice.hidden=!temporaryStorageMode;}
 
 const DEMO_ITEMS = [];
-let categories=loadCategories(),items=loadItems(),savedPlaces=loadPlaces(),tab='home',filter='Todos',search='',locationFilter=null,photoDraft='',prevTab='home',currentCat=null,statusFilter='all';
+let categories=loadCategories(),items=loadItems(),savedPlaces=loadPlaces(),preferredPlaceName=loadPreferredPlace(),tab='home',filter='Todos',search='',locationFilter=null,photoDraft='',prevTab='home',currentCat=null,statusFilter='all';
 function loadCategories(){try{const d=JSON.parse(localStorage.getItem(CAT_KEY));return Array.isArray(d)?d:JSON.parse(JSON.stringify(CAT_DEMO))}catch(_){return JSON.parse(JSON.stringify(CAT_DEMO))}}
 function getCat(id){return categories.find(c=>c.id===id)||null}
 function catChain(id){const path=[],seen=new Set();let c=getCat(id);while(c&&!seen.has(c.id)){path.unshift(c);seen.add(c.id);c=getCat(c.parentId)}return path}
@@ -696,12 +700,26 @@ function loadItems(){
 }
 
 function loadPlaces(){try{const d=JSON.parse(localStorage.getItem(PLACES_KEY));return Array.isArray(d)?d.filter(p=>typeof p==='string'&&p.trim()):DEFAULT_PLACES.slice()}catch(_){return DEFAULT_PLACES.slice()}}
+function loadPreferredPlace(){try{return String(localStorage.getItem(DEFAULT_PLACE_KEY)||'')}catch(_){return ''}}
+function activeDefaultPlace(){const available=places();return available.find(p=>p===preferredPlaceName)||available[0]||''}
+function setDefaultPlace(value){
+ const selected=places().find(p=>p===value);
+ if(!selected){toast('Ese lugar no existe. Crea uno desde Lugares.');render();return;}
+ const previous=preferredPlaceName;
+ preferredPlaceName=selected;
+ if(!temporaryStorageMode){
+  try{localStorage.setItem(DEFAULT_PLACE_KEY,preferredPlaceName)}
+  catch(_){preferredPlaceName=previous;toast('No se pudo guardar el lugar predeterminado.');render();return;}
+ }
+ render();toast('Lugar predeterminado: '+selected);
+}
 function persist(){
  if(temporaryStorageMode){syncStorageNotice();return true;}
  try{
   localStorage.setItem(KEY,JSON.stringify(items));
   localStorage.setItem(CAT_KEY,JSON.stringify(categories));
   localStorage.setItem(PLACES_KEY,JSON.stringify(savedPlaces));
+  localStorage.setItem(DEFAULT_PLACE_KEY,preferredPlaceName);
   return true;
  }catch(e){
   // Si un navegador revoca el acceso al almacenamiento a mitad de la sesión, se pasa a modo demo.
@@ -810,9 +828,11 @@ function places(){return [...new Set([...savedPlaces,...items.map(i=>i.place)].m
 function normalizePlaceName(name){return String(name||'').trim().replace(/\s+/g,' ')}
 function existingPlace(name,except=null){return places().find(p=>p!==except&&p.toLocaleLowerCase('es')===name.toLocaleLowerCase('es'))||null}
 function placeOptions(selected){
- const available=[...new Set([...places(),selected].map(n=>String(n||'').trim()).filter(Boolean))];
- return available.map(p=>`<option value="${esc(p)}" ${p===selected?'selected':''}>${esc(p)}</option>`).join('')
-   +'<option value="__nuevo_lugar__">＋ Añadir un lugar nuevo…</option>';
+ const available=places();
+ // Sin lugares no se inventa «Trastero principal»: el usuario debe elegir o crear uno.
+ const noPlaces=!available.length?'<option value="" selected disabled>Selecciona o crea un lugar…</option>':'';
+ return noPlaces+available.map(p=>`<option value="${esc(p)}" ${p===selected?'selected':''}>${esc(p)}</option>`).join('')
+  +'<option value="__nuevo_lugar__">＋ Añadir un lugar nuevo…</option>';
 }
 function changePlaceChoice(select){
  const custom=select.value==='__nuevo_lugar__';
@@ -968,9 +988,10 @@ function newItemForCategory(id){photoDraft='';itemForm(null,id)}
 function renderLocations(){
  const all=places();
  return `<div class="page"><div class="headrow" style="margin-top:13px;gap:10px"><div><div class="eyebrow">ORGANIZACIÓN</div><h2 class="page-title">Lugares</h2></div><button class="plus" onclick="placeForm()">${icon('plus','tiny')} Añadir</button></div>
- <p class="sub">Crea tantos espacios como necesites. También aparecerán al editar la ubicación de cualquier objeto.</p>
+ <p class="sub">Crea tantos espacios como necesites. Todos los lugares del selector al añadir objetos aparecen aquí.</p>
+ ${all.length?`<div class="default-place-card"><label for="default-place-choice">Lugar predeterminado al añadir objetos</label><select id="default-place-choice" class="field" onchange="setDefaultPlace(this.value)">${all.map(p=>`<option value="${esc(p)}" ${p===activeDefaultPlace()?'selected':''}>${esc(p)}</option>`).join('')}</select><small>Se seleccionará automáticamente al crear un objeto nuevo. Puedes cambiarlo en cada ficha.</small></div>`:`<div class="default-place-card"><strong>Aún no hay lugares</strong><small>Primero crea un lugar o añádelo desde la ficha de un objeto.</small></div>`}
  <div class="section"><h3>Mis espacios</h3><span class="quiet-caption">${all.length} ${all.length===1?'lugar':'lugares'}</span></div>
- ${all.map((place,index)=>{const here=items.filter(i=>i.place===place);const missing=here.filter(i=>i.loan||inTransit(i)).length;return `<div class="location-row"><button class="location-card" onclick="goToLocation(${index})" aria-label="Ver objetos de ${esc(place)}"><span class="location-icon">${icon('pin')}</span><span class="info"><strong>${esc(place)}</strong><span class="path">${here.length} ${here.length===1?'objeto asignado':'objetos asignados'}${missing?' · '+missing+' fuera temporalmente':''}</span></span><span class="num">${here.length}</span>${icon('next','chevron')}</button><button class="place-manage" onclick="placeForm(${index})" aria-label="Editar lugar ${esc(place)}" title="Editar este lugar">${icon('pencil','tiny')}</button></div>`}).join('')||empty('Sin lugares','Pulsa «Añadir» para crear tu primer espacio.')}
+ ${all.map((place,index)=>{const here=items.filter(i=>i.place===place);const missing=here.filter(i=>i.loan||inTransit(i)).length;return `<div class="location-row"><button class="location-card" onclick="goToLocation(${index})" aria-label="Ver objetos de ${esc(place)}"><span class="location-icon">${icon('pin')}</span><span class="info"><strong>${esc(place)}</strong><span class="path">${here.length} ${here.length===1?'objeto asignado':'objetos asignados'}${missing?' · '+missing+' fuera temporalmente':''}${place===activeDefaultPlace()?' · Predeterminado':''}</span></span><span class="num">${here.length}</span>${icon('next','chevron')}</button><button class="place-manage" onclick="placeForm(${index})" aria-label="Editar lugar ${esc(place)}" title="Editar este lugar">${icon('pencil','tiny')}</button></div>`}).join('')||empty('Sin lugares','Pulsa «Añadir» para crear tu primer espacio.')}
  <div class="feature">${icon('pin')}<div><strong>Organiza a tu manera</strong><p>Por ejemplo: Trastero principal, Casa de mis padres, Garaje o Local. Un lugar puede estar vacío mientras vas añadiendo objetos.</p></div></div></div>`
 }
 function placeForm(index=null){
@@ -997,6 +1018,7 @@ function savePlace(e,index=null){
    if(!savedPlaces.includes(newName))savedPlaces.push(newName);
    for(const i of items)if(i.place===oldName)i.place=newName;
    if(locationFilter===oldName)locationFilter=newName;
+   if(preferredPlaceName===oldName)preferredPlaceName=newName;
  }else{savedPlaces.push(newName)}
  persist();closeModal();render();toast(oldName?'Lugar actualizado':'Lugar creado');
 }
@@ -1005,10 +1027,11 @@ async function deletePlace(index){
  if(items.some(i=>i.place===oldName)){toast('Antes, cambia de lugar los objetos que contiene.');return}
  if(!await appConfirm(`¿Eliminar el lugar «${oldName}»?`,'Eliminar lugar',true))return;
  savedPlaces=savedPlaces.filter(p=>p!==oldName);
+ if(preferredPlaceName===oldName)preferredPlaceName=places()[0]||'';
  persist();closeModal();render();toast('Lugar eliminado');
 }
 function renderLoans(){const loaned=items.filter(i=>i.loan);return `<div class="page"><div class="eyebrow" style="margin-top:13px">CONTROL DE HERRAMIENTAS</div><h2 class="page-title">Préstamos</h2><p class="sub">Sabrás quién tiene cada herramienta y no se te olvidará reclamarla.</p><div class="stats" style="grid-template-columns:repeat(2,1fr);margin:19px 0 24px"><div class="stat"><span>${countLoan()}</span><small>Por devolver</small></div><div class="stat"><span>${items.length-countLoan()}</span><small>Disponibles</small></div></div><div class="section"><h3>Pendientes de devolución</h3></div>${loaned.map(i=>`<div class="loan-card"><div class="loan-top">${thumb(i)}<div class="info"><strong>${esc(i.name)}</strong><div class="path">Prestado el ${esc(i.loan.date)}</div><span class="pill loan">Pendiente</span></div></div><div class="loan-bottom"><span class="loan-name">Prestado a<b>${esc(i.loan.to)}</b></span><button class="success-btn" onclick="returnItem('${i.id}')">${icon('check','tiny')} Devuelto</button></div></div>`).join('')||empty('Todo devuelto','No hay herramientas pendientes de devolver.') }<div class="feature">${icon('loan')}<div><strong>¿Quieres prestar una herramienta?</strong><p>Abre su ficha desde Inventario y pulsa «Prestar herramienta». Quedará anotado a quién se la dejaste.</p></div></div></div>`}
-function renderSettings(){return `<div class="page"><div class="eyebrow" style="margin-top:13px">PERSONALIZA TU ESPACIO</div><h2 class="page-title">Más opciones</h2><p class="sub">Configura las opciones de tu inventario.</p><div class="settingsbox"><div class="setting">${icon('layers')}<span class="info"><strong>Mis categorías</strong><small>${categories.length} categorías, con todos los niveles que necesites.</small></span><button onclick="navigate('categories')">Abrir</button></div><div class="setting">${icon('pin')}<span class="info"><strong>Mis ubicaciones</strong><small>Crea, renombra y organiza todos los lugares que necesites.</small></span><button onclick="navigate('locations')">Abrir</button></div><div class="setting">${icon('camera')}<span class="info"><strong>Fotos de los objetos</strong><small>Puedes hacer una foto al añadir un objeto.</small></span></div><div class="setting">${icon('qr')}<span class="info"><strong>Etiquetas QR</strong><small>Previsto para la versión completa.</small></span></div><div class="setting">${icon('download')}<span class="info"><strong>Copia de seguridad completa</strong><small>Guarda objetos, fotos, categorías, lugares, préstamos y tránsitos en un archivo.</small></span><button type="button" onclick="exportBackup()">Guardar copia</button></div><div class="setting">${icon('refresh')}<span class="info"><strong>Restaurar una copia</strong><small>Recupera tu inventario en este móvil o en otro. Sustituye los datos actuales.</small></span><button type="button" onclick="chooseBackup()">Restaurar</button><input type="file" id="backup-input" accept="application/json,.json" style="display:none" onchange="importBackup(event)"></div><div class="setting">${icon('refresh')}<span class="info"><strong>Actualizaciones</strong><small id="updater-status">Busca e instala mejoras sin compilar otra APK. Tus objetos permanecen en este móvil.</small></span><button type="button" onclick="checkAppUpdate()">Buscar</button></div><div class="setting">${icon('settings')}<span class="info"><strong>Canal de actualizaciones</strong><small>Configura una vez el enlace de GitHub desde el que recibirás las nuevas versiones.</small></span><button type="button" onclick="configureAppUpdates()">Configurar</button></div><div class="setting">${icon('download')}<span class="info"><strong>Exportar inventario</strong><small>Descargar CSV compatible con Excel.</small></span><button onclick="exportCSV()">Exportar</button></div></div><div class="feature">${icon('check')}<div><strong>Privacidad</strong><p>Esta aplicación guarda los cambios de forma local en el teléfono. No tiene cuentas ni envía tu inventario a un servidor. Las fotos que tú añadas quedan incluidas en la copia JSON. No necesitas conexión a Internet para utilizar tu inventario. Las copias no son automáticas: guarda tu archivo en un lugar seguro fuera del teléfono.</p></div></div><p class="footer-note">Mi Trastero · <span id="updater-version">Demo V2.2</span><br>Sistema de actualizaciones: V2.2.9.</p></div>`}
+function renderSettings(){return `<div class="page"><div class="eyebrow" style="margin-top:13px">PERSONALIZA TU ESPACIO</div><h2 class="page-title">Más opciones</h2><p class="sub">Configura las opciones de tu inventario.</p><div class="settingsbox"><div class="setting">${icon('layers')}<span class="info"><strong>Mis categorías</strong><small>${categories.length} categorías, con todos los niveles que necesites.</small></span><button onclick="navigate('categories')">Abrir</button></div><div class="setting">${icon('pin')}<span class="info"><strong>Mis ubicaciones</strong><small>Crea, renombra y elige qué lugar se selecciona al añadir objetos.</small></span><button onclick="navigate('locations')">Abrir</button></div><div class="setting">${icon('camera')}<span class="info"><strong>Fotos de los objetos</strong><small>Puedes hacer una foto al añadir un objeto.</small></span></div><div class="setting">${icon('qr')}<span class="info"><strong>Etiquetas QR</strong><small>Previsto para la versión completa.</small></span></div><div class="setting">${icon('download')}<span class="info"><strong>Copia de seguridad completa</strong><small>Guarda objetos, fotos, categorías, lugares, préstamos y tránsitos en un archivo.</small></span><button type="button" onclick="exportBackup()">Guardar copia</button></div><div class="setting">${icon('refresh')}<span class="info"><strong>Restaurar una copia</strong><small>Recupera tu inventario en este móvil o en otro. Sustituye los datos actuales.</small></span><button type="button" onclick="chooseBackup()">Restaurar</button><input type="file" id="backup-input" accept="application/json,.json" style="display:none" onchange="importBackup(event)"></div><div class="setting">${icon('refresh')}<span class="info"><strong>Actualizaciones</strong><small id="updater-status">Busca e instala mejoras sin compilar otra APK. Tus objetos permanecen en este móvil.</small></span><button type="button" onclick="checkAppUpdate()">Buscar</button></div><div class="setting">${icon('settings')}<span class="info"><strong>Canal de actualizaciones</strong><small>Configura una vez el enlace de GitHub desde el que recibirás las nuevas versiones.</small></span><button type="button" onclick="configureAppUpdates()">Configurar</button></div><div class="setting">${icon('download')}<span class="info"><strong>Exportar inventario</strong><small>Descargar CSV compatible con Excel.</small></span><button onclick="exportCSV()">Exportar</button></div></div><div class="feature">${icon('check')}<div><strong>Privacidad</strong><p>Esta aplicación guarda los cambios de forma local en el teléfono. No tiene cuentas ni envía tu inventario a un servidor. Las fotos que tú añadas quedan incluidas en la copia JSON. No necesitas conexión a Internet para utilizar tu inventario. Las copias no son automáticas: guarda tu archivo en un lugar seguro fuera del teléfono.</p></div></div><p class="footer-note">Mi Trastero · <span id="updater-version">Demo V2.2</span><br>Sistema de actualizaciones: V2.2.9.</p></div>`}
 function renderNav(){const arr=[['home','home','Inicio'],['inventory','grid','Inventario'],['categories','layers','Categorías'],['loans','loan','Préstamos'],['settings','settings','Más']];document.getElementById('nav').innerHTML=arr.map(([k,ico,tx])=>`<button class="nav ${tab===k?'active':''}" onclick="navigate('${k}')" aria-label="${tx}"><span class="navcircle">${icon(ico)}</span><span>${tx}</span></button>`).join('')}
 function render(focus=false){document.getElementById('view').innerHTML=tab==='home'?renderHome():tab==='inventory'?renderInventory():tab==='categories'?renderCategories():tab==='locations'?renderLocations():tab==='loans'?renderLoans():renderSettings();renderNav();renderUpdateVersion();syncStorageNotice();if(focus){document.getElementById('search-input')?.focus()}}
 function navigate(t,focus=false){
@@ -1168,12 +1191,12 @@ function commitTransitPermanent(e,id){
 }
 function newItem(){photoDraft='';itemForm(null)}
 function editItem(id){photoDraft='';itemForm(items.find(i=>i.id===id))}
-function itemForm(i,requestedCat=null){let newObj=!i;let chosen=i||{};const preferredCat=chosen.catId||requestedCat||'c-other';const selectedCat=getCat(preferredCat)?preferredCat:(flatCategories()[0]?.c.id||'');openModal(`<div class="sheet-top"><h2>${newObj?'Añadir objeto':'Editar objeto'}</h2><button class="close" onclick="closeModal()">${icon('close')}</button></div><p class="desc" style="margin-top:9px">${newObj?'Añade lo que tengas a mano. La ubicación exacta puede quedar en blanco.':'Cambia los datos y guarda la ficha.'}</p><form id="item-form" autocomplete="off" autocorrect="on" novalidate onsubmit="return saveItemSafely(event,${newObj?'null':`'${esc(i.id)}'`})"><div id="save-error" class="save-error" role="alert" hidden></div><label class="label" for="name">Nombre del objeto *</label><input required class="field" id="name" name="inventoryObjectTitle" value="${esc(chosen.name||'')}" placeholder="Ej.: Taladro Bosch" autocomplete="off" autocorrect="on" spellcheck="true" autocapitalize="sentences"><label class="label" for="category">Categoría o subcategoría *</label><select class="field" id="category" name="category">${categoryOptions(selectedCat)}</select>
+function itemForm(i,requestedCat=null){let newObj=!i;let chosen=i||{};const preferredCat=chosen.catId||requestedCat||'c-other';const selectedCat=getCat(preferredCat)?preferredCat:(flatCategories()[0]?.c.id||'');const initialPlace=newObj?activeDefaultPlace():String(chosen.place||'');openModal(`<div class="sheet-top"><h2>${newObj?'Añadir objeto':'Editar objeto'}</h2><button class="close" onclick="closeModal()">${icon('close')}</button></div><p class="desc" style="margin-top:9px">${newObj?'Añade lo que tengas a mano. La ubicación exacta puede quedar en blanco.':'Cambia los datos y guarda la ficha.'}</p><form id="item-form" autocomplete="off" autocorrect="on" novalidate onsubmit="return saveItemSafely(event,${newObj?'null':`'${esc(i.id)}'`})"><div id="save-error" class="save-error" role="alert" hidden></div><label class="label" for="name">Nombre del objeto *</label><input required class="field" id="name" name="inventoryObjectTitle" value="${esc(chosen.name||'')}" placeholder="Ej.: Taladro Bosch" autocomplete="off" autocorrect="on" spellcheck="true" autocapitalize="sentences"><label class="label" for="category">Categoría o subcategoría *</label><select class="field" id="category" name="category">${categoryOptions(selectedCat)}</select>
  ${isLegacyMeasured(chosen)?`<div class="save-error" role="note">Este objeto se guardó con el sistema anterior: <b>${esc(quantityLabel(chosen))}</b>. Para convertirlo sin confundir metros con piezas, indica ahora cuántas unidades tienes y, si procede, cuánto mide cada una.</div>`:''}
  <div class="measurement-fields"><div><label class="label" for="qty">Cantidad *</label><input required class="field" id="qty" name="qty" type="text" inputmode="numeric" maxlength="12" value="${isLegacyMeasured(chosen)?'':esc(chosen.qty??1)}" placeholder="1" aria-describedby="quantity-help"><small id="quantity-help" class="measurement-helper">Número de unidades</small></div><div><label class="label" for="measureValue">Medida (opcional)</label><div class="measurement-combo"><input class="field" id="measureValue" name="measureValue" type="text" inputmode="decimal" maxlength="16" value="${chosen.measureValue!=null?esc(String(chosen.measureValue)):''}" placeholder="Ej.: 200" aria-label="Valor de la medida"><select class="field" id="measureUnit" name="measureUnit" aria-label="Unidad de medida">${unitOptions(normalizedMeasureUnit(chosen.measureUnit || (isLegacyMeasured(chosen)?chosen.qtyUnit:'cm')))}</select></div><small class="measurement-helper">Medida de cada unidad, si procede</small></div></div>
  <small class="measurement-helper">Ejemplo: <b>1 tubo PVC de 200 cm</b>. Si el objeto no necesita medida, deja ese campo vacío.</small>
  <label class="label" for="dimensions">Otros detalles / dimensiones (opcional)</label><input class="field" id="dimensions" name="dimensions" maxlength="120" value="${esc(chosen.dimensions||'')}" placeholder="Ej.: diámetro 40 mm, sección 2,5 mm²" autocomplete="off" autocorrect="on" spellcheck="true" autocapitalize="sentences">
- <div class="cat-help">Puedes elegir cualquier categoría o subcategoría. Para crear nuevos niveles, entra en «Categorías».</div><label class="label" for="place">Espacio donde se guarda *</label><select required class="field place-choice" id="place" name="place" onchange="changePlaceChoice(this)" data-original="${esc(chosen.place||'Trastero principal')}" data-original-exact="${esc(chosen.location||'')}">${placeOptions(chosen.place||'Trastero principal')}</select><small class="place-hint">Selecciona otro espacio para cambiar la ubicación permanente del objeto.</small><div id="new-place-wrap" hidden><label class="label new-place-caption" for="new-place">Nombre del nuevo lugar *</label><input class="field" id="new-place" name="newPlace" maxlength="80" placeholder="Ej.: Casa de la playa" autocomplete="off" autocorrect="on" spellcheck="true" autocapitalize="sentences"></div><label class="label" for="location">Lugar exacto (opcional)</label><input class="field" id="location" name="location" value="${esc(chosen.location||'')}" placeholder="Ej.: Estantería A, caja 3" autocomplete="off" autocorrect="on" spellcheck="true" autocapitalize="sentences"><label class="label" for="notes">Notas (opcional)</label><textarea class="field fieldarea" id="notes" name="notes" placeholder="Ej.: Tiene dos baterías y su cargador" autocomplete="off" autocorrect="on" spellcheck="true" autocapitalize="sentences">${esc(chosen.notes||'')}</textarea><label class="label">Foto del objeto (opcional)</label><label class="photo-uploader" for="photo-file"><span id="picture-preview">${chosen.photo?`<img src="${esc(chosen.photo)}" onerror="this.style.display='none'">`:icon('camera')}</span><span id="picture-label">${chosen.photo?'Cambiar foto':'Hacer foto o elegir imagen'}</span></label><input type="file" id="photo-file" accept="image/*" capture="environment" onchange="setPicture(event)" style="position:absolute;opacity:0;width:1px;height:1px"><button class="primary" type="button" onclick="saveItemSafely(event,${newObj?'null':`'${esc(i.id)}'`})">${newObj?'Guardar objeto':'Guardar cambios'}</button></form>`)}
+ <div class="cat-help">Puedes elegir cualquier categoría o subcategoría. Para crear nuevos niveles, entra en «Categorías».</div><label class="label" for="place">Espacio donde se guarda *</label><select required class="field place-choice" id="place" name="place" onchange="changePlaceChoice(this)" data-original="${esc(chosen.place||'')}" data-original-exact="${esc(chosen.location||'')}">${placeOptions(initialPlace)}</select><small class="place-hint">Selecciona otro espacio para cambiar la ubicación permanente del objeto.</small><div id="new-place-wrap" hidden><label class="label new-place-caption" for="new-place">Nombre del nuevo lugar *</label><input class="field" id="new-place" name="newPlace" maxlength="80" placeholder="Ej.: Casa de la playa" autocomplete="off" autocorrect="on" spellcheck="true" autocapitalize="sentences"></div><label class="label" for="location">Lugar exacto (opcional)</label><input class="field" id="location" name="location" value="${esc(chosen.location||'')}" placeholder="Ej.: Estantería A, caja 3" autocomplete="off" autocorrect="on" spellcheck="true" autocapitalize="sentences"><label class="label" for="notes">Notas (opcional)</label><textarea class="field fieldarea" id="notes" name="notes" placeholder="Ej.: Tiene dos baterías y su cargador" autocomplete="off" autocorrect="on" spellcheck="true" autocapitalize="sentences">${esc(chosen.notes||'')}</textarea><label class="label">Foto del objeto (opcional)</label><label class="photo-uploader" for="photo-file"><span id="picture-preview">${chosen.photo?`<img src="${esc(chosen.photo)}" onerror="this.style.display='none'">`:icon('camera')}</span><span id="picture-label">${chosen.photo?'Cambiar foto':'Hacer foto o elegir imagen'}</span></label><input type="file" id="photo-file" accept="image/*" capture="environment" onchange="setPicture(event)" style="position:absolute;opacity:0;width:1px;height:1px"><button class="primary" type="button" onclick="saveItemSafely(event,${newObj?'null':`'${esc(i.id)}'`})">${newObj?'Guardar objeto':'Guardar cambios'}</button></form>`)}
 function setPicture(e){let f=e.target.files[0];if(!f)return;if(!f.type.startsWith('image/')){toast('Elige una imagen.');return}const img=new Image();img.onload=()=>{const max=750,scale=Math.min(1,max/Math.max(img.width,img.height));let canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);photoDraft=canvas.toDataURL('image/jpeg',.73);document.getElementById('picture-preview').innerHTML=`<img src="${photoDraft}" alt="Vista previa">`;document.getElementById('picture-label').textContent='Foto seleccionada';URL.revokeObjectURL(img.src)};img.src=URL.createObjectURL(f)}
 function showSaveError(message,fieldId){
  const box=document.getElementById('save-error');
@@ -1256,7 +1279,7 @@ function saveLocalFile(filename,mime,text){
 }
 function exportBackup(){
  try{
-   const data=JSON.stringify({format:'mi-trastero-backup',version:1,createdAt:new Date().toISOString(),data:{items,categories,places:savedPlaces}});
+   const data=JSON.stringify({format:'mi-trastero-backup',version:1,createdAt:new Date().toISOString(),data:{items,categories,places:savedPlaces,defaultPlace:activeDefaultPlace()}});
    if(new Blob([data],{type:'application/json'}).size>30*1024*1024)throw Error('La copia supera el límite de restauración de 30 MB. Reduce fotografías antes de exportar.');
    const date=new Date(),pad=n=>String(n).padStart(2,'0');
    const filename=`Mi_Trastero_Copia_${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}_${pad(date.getHours())}-${pad(date.getMinutes())}.json`;
@@ -1321,13 +1344,15 @@ async function restoreBackupFromText(raw){
  if(backup?.format!=='mi-trastero-backup'||backup.version!==1||!backup.data)
    throw Error('El archivo no es una copia de Mi Trastero compatible con esta versión.');
  const {items:newItems,categories:newCategories,places:newPlaces}=backup.data;
+ const newDefault=typeof backup.data.defaultPlace==='string'?backup.data.defaultPlace:'';
  const validItems=Array.isArray(newItems)&&newItems.every(o=>o&&typeof o==='object'&&typeof o.id==='string'&&typeof o.name==='string'&&typeof o.place==='string'&&typeof o.catId==='string');
  const validCategories=Array.isArray(newCategories)&&newCategories.every(c=>c&&typeof c==='object'&&typeof c.id==='string'&&typeof c.name==='string');
  const validPlaces=Array.isArray(newPlaces)&&newPlaces.every(x=>typeof x==='string');
  if(!validItems||!validCategories||!validPlaces)throw Error('La copia contiene datos incompletos o incompatibles.');
  const count=newItems.length;
  if(!await appConfirm(`Se restaurarán ${count} objetos, ${newCategories.length} categorías y ${newPlaces.length} lugares. Esto sustituirá el inventario actual. ¿Continuar?`,'Restaurar copia'))return;
- const next=[[KEY,JSON.stringify(newItems)],[CAT_KEY,JSON.stringify(newCategories)],[PLACES_KEY,JSON.stringify(newPlaces)]];
+ const validDefault=[...new Set([...newPlaces,...newItems.map(i=>i.place)])].find(x=>x===newDefault)||'';
+ const next=[[KEY,JSON.stringify(newItems)],[CAT_KEY,JSON.stringify(newCategories)],[PLACES_KEY,JSON.stringify(newPlaces)],[DEFAULT_PLACE_KEY,validDefault]];
  const before=next.map(([k])=>[k,localStorage.getItem(k)]);
  try{
    for(const [k,v] of next)localStorage.setItem(k,v);
@@ -1335,7 +1360,7 @@ async function restoreBackupFromText(raw){
    for(const [k,v] of before){try{if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(_){}}
    throw Error('No queda espacio suficiente en el almacenamiento. Tus datos actuales se han conservado.');
  }
- items=newItems;categories=newCategories;savedPlaces=newPlaces;
+ items=newItems;categories=newCategories;savedPlaces=newPlaces;preferredPlaceName=validDefault;
  currentCat=null;filter='Todos';statusFilter='all';locationFilter=null;search='';
  closeModal();navigate('home');toast(`Copia restaurada correctamente: ${count} objetos.`);
 }
@@ -1456,5 +1481,5 @@ render();
 renderUpdateVersion();
 try{updaterBridge()?.uiReady()}catch(_){}
 </script>
-<!-- canal V2.2.11 iconos centrados 2026-10-21 -->
+<!-- canal V2.2.12 iconos centrados 2026-10-21 -->
 </body></html>

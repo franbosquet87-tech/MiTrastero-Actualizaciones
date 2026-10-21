@@ -1,6 +1,6 @@
 {
-  "revision": 1792613160,
-  "version": "V2.2.11",
-  "sha256": "db4f40cc4b44450aa5396dca111b5b8e6fef1cdbf23b43c22b3ab388dafde1ce",
-  "notes": "Campos de texto: autocorrección y sugerencias del teclado activadas, nombres de objetos sin sugerencia de perfil de Google. Sin cambios en inventario, copias de seguridad, iconos ni aspecto."
+  "revision": 1792700001,
+  "version": "V2.2.12",
+  "sha256": "830c2e4f238cb260f0d03c5023f5bcb9cb7e584e8c692071e6421db8ee33817f",
+  "notes": "Lugares: el alta de objetos solo selecciona ubicaciones existentes, elección persistente de lugar predeterminado en Lugares, cambio automático tras renombrar/eliminar y compatibilidad con copias anteriores."
 }
