@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f3f5f8">
-<title>Mi Trastero · V2.2.13</title>
+<title>Mi Trastero · V2.2.14</title>
 <style>
 :root{--bg:#f5f6f3;--ink:#142b28;--mut:#7c8983;--green:#123c34;--green2:#1e6557;--line:#e7ece7;--accent:#d9f2ad;--orange:#f1ba83;--white:#fff;--shadow:0 12px 35px rgba(33,64,47,.07)}
 *{box-sizing:border-box}html{background:#e9efec}body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);-webkit-tap-highlight-color:transparent}button,input,select{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #8db2a2;outline-offset:2px}button{border:0}svg{display:inline-block;vertical-align:middle;flex-shrink:0}.icon{width:21px;height:21px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.tiny{width:16px;height:16px}.app{max-width:480px;margin:auto;background:var(--bg);min-height:100dvh;box-shadow:0 12px 60px #153b2318;position:relative}.page{padding:0 22px 112px;min-height:80vh;animation:appear .24s ease}@keyframes appear{from{opacity:.1;transform:translateY(8px)}to{opacity:1;transform:none}}
@@ -287,15 +287,15 @@ body{background:#e9edf3;color:var(--ink);font-family:Inter,ui-sans-serif,-apple-
 .toast{background:#24364c;color:#fff}
 .trial-ribbon{background:#e9edf5;color:#5b6f8b}.trial-ribbon span:last-child{color:#8492a3}
 
-/* V2.2.13: flechas para ordenar carpetas en su mismo nivel */
-.cat-sort-row{display:flex;align-items:stretch;gap:8px;margin-bottom:10px}
-.cat-sort-row .cat-card{min-width:0;flex:1;margin-bottom:0}
-.cat-sort-controls{flex:0 0 40px;display:flex;flex-direction:column;gap:5px}
-.cat-sort-button{width:40px;min-height:36px;flex:1;border:1px solid #dbe2ec;border-radius:10px;background:#fff;color:#3b536c;font-size:20px;font-weight:750;line-height:1;display:grid;place-items:center;touch-action:manipulation}
-.cat-sort-button:active:not(:disabled){background:#eaf0f7}
-.cat-sort-button:disabled{opacity:.24;cursor:default}
-.cat-sort-button:focus-visible{outline:2px solid #5372a0;outline-offset:2px}
-@media(max-width:380px){.cat-sort-row{gap:6px}.cat-sort-row .cat-card{padding:10px;gap:8px}.cat-sort-row .cat-symbol{width:43px;height:43px;flex-basis:43px}.cat-sort-row .cat-main small{font-size:10px}.cat-sort-controls{flex-basis:38px}.cat-sort-button{width:38px}}
+/* V2.2.14: pulsación larga y arrastre, sin flechas */
+.cat-sort-row{position:relative;margin-bottom:10px;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.cat-sort-row .cat-card{min-height:76px;margin:0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.cat-sort-row.cat-drag-origin{opacity:.25}
+.cat-sort-row.cat-drag-origin .cat-card{background:#eaf1fa;border:1.5px dashed #a9bacb}
+.cat-drag-ghost{position:fixed;z-index:150;pointer-events:none;margin:0!important;opacity:.97;box-sizing:border-box;filter:drop-shadow(0 12px 13px rgba(30,45,65,.20))}
+.cat-drag-ghost .cat-card{background:#fff!important;border:2px solid #7295b5!important;box-shadow:0 10px 24px #1e324d30!important}
+body.category-is-dragging{cursor:grabbing}
+@media(max-width:365px){.cat-sort-row .cat-card{padding:11px;gap:9px}}
 .location-row{display:flex;align-items:stretch;gap:9px;margin-bottom:10px}
 .location-row .location-card{min-width:0;flex:1;margin-bottom:0;gap:11px;padding:12px}
 .place-manage{width:47px;min-width:47px;display:grid;place-items:center;border:1px solid #e1e6ed;border-radius:12px;background:#fff;color:#5d708c;box-shadow:0 6px 20px rgba(30,41,59,.04)}
@@ -962,15 +962,11 @@ function renderCategories(){
   if(currentCat&&!getCat(currentCat))currentCat=null;
   const current=getCat(currentCat), chain=catChain(currentCat), children=categories.filter(c=>c.parentId===currentCat), direct=items.filter(i=>i.catId===currentCat);
   const bread=`<div class="cat-crumbs"><button class="${!current?'current':''}" onclick="browseCat(null)">Todas</button>${chain.map((c,j)=>`<span class="cat-arrow">›</span><button class="${j===chain.length-1?'current':''}" onclick="browseCat('${c.id}')">${esc(c.name)}</button>`).join('')}</div>`;
-  const card=(c,index)=>`<div class="cat-sort-row">
-   <button class="cat-card" onclick="browseCat('${c.id}')"><span class="cat-symbol">${catGlyph(c,'cat-emoji')}</span><span class="cat-main"><b>${esc(c.name)}</b><small>${categories.filter(v=>v.parentId===c.id).length} subcategorías · ${catCount(c.id)} objetos</small></span><span class="cat-qty">${catCount(c.id)}</span>${icon('next','chevron')}</button>
-   ${children.length>1?`<div class="cat-sort-controls" role="group" aria-label="Ordenar ${esc(c.name)}">
-    <button class="cat-sort-button" type="button" title="Subir" aria-label="Subir ${esc(c.name)}" data-cat-id="${esc(c.id)}" data-direction="-1" onclick="moveCategory(this.dataset.catId,-1)" ${index===0?'disabled':''}>↑</button>
-    <button class="cat-sort-button" type="button" title="Bajar" aria-label="Bajar ${esc(c.name)}" data-cat-id="${esc(c.id)}" data-direction="1" onclick="moveCategory(this.dataset.catId,1)" ${index===children.length-1?'disabled':''}>↓</button>
-   </div>`:``}
+  const card=c=>`<div class="cat-sort-row" data-cat-id="${esc(c.id)}">
+   <button class="cat-card" type="button" onclick="browseCat('${c.id}')" aria-label="Abrir ${esc(c.name)}. Mantén pulsado para ordenar."><span class="cat-symbol">${catGlyph(c,'cat-emoji')}</span><span class="cat-main"><b>${esc(c.name)}</b><small>${categories.filter(v=>v.parentId===c.id).length} subcategorías · ${catCount(c.id)} objetos</small></span><span class="cat-qty">${catCount(c.id)}</span>${icon('next','chevron')}</button>
   </div>`;
-  const foldersContent=`${bread}${current?`<div class="cat-current"><span>${catGlyph(current)}</span><strong>${esc(current.name)}</strong></div>`:'<div class="cat-hint">Crea carpetas y subcarpetas para clasificar tu inventario.</div>'}<div class="cat-actions"><button class="plus" onclick="openCategoryForm(${currentCat?`'${currentCat}'`:'null'})">${icon('plus','tiny')} ${current?'Nueva subcategoría':'Nueva categoría'}</button>${current?`<button class="cat-ghost" onclick="openCategoryForm(null,'${current.id}')">${icon('pencil','tiny')} Editar / mover</button>`:''}</div><div class="cat-header"><h3>${current?'Dentro de '+esc(current.name):'Tus categorías'}</h3><span class="cat-badge">${children.length} carpetas</span></div>${children.length?children.map(card).join(''):(current?`<p class="cat-empty-note">${icon('box','tiny')} Sin subcarpetas por ahora</p>`:empty('Aún no hay categorías','Crea la primera y empieza a organizar.'))}${current?`<div class="cat-header"><h3>Objetos de esta categoría</h3><button onclick="openBranchInventory('${current.id}')">Ver toda la rama →</button></div>${direct.length?`<div class="itemlist">${direct.map(itemCard).join('')}</div>`:`<p class="cat-empty-note">${icon('box','tiny')} No hay objetos en esta carpeta</p>` }<button class="secondary" onclick="newItemForCategory('${current.id}')">${icon('plus','tiny')} Añadir objeto aquí</button><p class="cat-nested-hint">Los objetos de subcategorías inferiores también se incluyen al buscar en esta rama.</p>`:'<p class="cat-nested-hint">Las categorías son independientes de las ubicaciones: puedes tener herramientas del mismo tipo en distintos trasteros.</p>'}`;
-  return `<div class="page"><div class="eyebrow" style="margin-top:13px">ORGANÍZALO A TU MANERA</div><h2 class="page-title">Categorías</h2><p class="sub">Organiza tus objetos por carpetas y subcarpetas. Usa ↑ ↓ para cambiar su orden.</p>${foldersContent}</div>`;
+  const foldersContent=`${bread}${current?`<div class="cat-current"><span>${catGlyph(current)}</span><strong>${esc(current.name)}</strong></div>`:'<div class="cat-hint">Crea carpetas y subcarpetas para clasificar tu inventario.</div>'}<div class="cat-actions"><button class="plus" onclick="openCategoryForm(${currentCat?`'${currentCat}'`:'null'})">${icon('plus','tiny')} ${current?'Nueva subcategoría':'Nueva categoría'}</button>${current?`<button class="cat-ghost" onclick="openCategoryForm(null,'${current.id}')">${icon('pencil','tiny')} Editar / mover</button>`:''}</div><div class="cat-header"><h3>${current?'Dentro de '+esc(current.name):'Tus categorías'}</h3><span class="cat-badge">${children.length} carpetas</span></div>${children.length?`<div id="category-sort-list">${children.map(card).join('')}</div>`:(current?`<p class="cat-empty-note">${icon('box','tiny')} Sin subcarpetas por ahora</p>`:empty('Aún no hay categorías','Crea la primera y empieza a organizar.'))}${current?`<div class="cat-header"><h3>Objetos de esta categoría</h3><button onclick="openBranchInventory('${current.id}')">Ver toda la rama →</button></div>${direct.length?`<div class="itemlist">${direct.map(itemCard).join('')}</div>`:`<p class="cat-empty-note">${icon('box','tiny')} No hay objetos en esta carpeta</p>` }<button class="secondary" onclick="newItemForCategory('${current.id}')">${icon('plus','tiny')} Añadir objeto aquí</button><p class="cat-nested-hint">Los objetos de subcategorías inferiores también se incluyen al buscar en esta rama.</p>`:'<p class="cat-nested-hint">Las categorías son independientes de las ubicaciones: puedes tener herramientas del mismo tipo en distintos trasteros.</p>'}`;
+  return `<div class="page"><div class="eyebrow" style="margin-top:13px">ORGANÍZALO A TU MANERA</div><h2 class="page-title">Categorías</h2><p class="sub">Organiza tus objetos por carpetas y subcarpetas. Mantén pulsada una carpeta y arrástrala para cambiar su posición.</p>${foldersContent}</div>`;
 }
 function browseCat(id){currentCat=id;render();window.scrollTo({top:0,behavior:'instant'})}
 function openBranchInventory(id){filter=id;locationFilter=null;search='';statusFilter='all';tab='inventory';render();window.scrollTo({top:0,behavior:'instant'})}
@@ -983,28 +979,141 @@ function openCategoryForm(parentId=null,editId=null){
   openModal(`<div class="sheet-top"><h2>${cat?'Editar o mover categoría':parent?'Nueva subcategoría':'Nueva categoría'}</h2><button class="close" onclick="closeModal()">${icon('close')}</button></div><p class="desc" style="margin-top:12px">${cat?'Cambia su nombre, icono o ubicación dentro del árbol.':parent?'Se creará dentro de: '+esc(catPath(parent.id)):'Se añadirá al primer nivel de tu árbol.'}</p><form novalidate onsubmit="saveCategory(event,${editId?`'${editId}'`:'null'},${parentId?`'${parentId}'`:'null'})"><label class="label" for="cat-name">Nombre *</label><input class="field" id="cat-name" required maxlength="60" value="${esc(cat?.name||'')}" placeholder="Ej.: Tornillos, baterías, madera..." autocomplete="off" autocorrect="on" spellcheck="true" autocapitalize="sentences"><label class="label" for="cat-color-preview">Icono de la categoría</label><input type="hidden" id="cat-emoji" value="${esc(cat?.emoji||'📁')}"><input type="hidden" id="cat-iconkey" value="${esc(cat?.iconKey||'')}"><input type="hidden" id="cat-icongroup" value="${esc(cat?.iconGroup||'')}"><button class="cat-icon-pick" id="cat-color-preview" type="button" onclick="openColorIconPicker()">${cat?.iconKey?colorIconTile(cat.iconKey,cat.iconGroup):'<span class="bank-glyph bank-placeholder">📁</span>'}<span><strong>${esc(cat?.iconKey?(colorIconEntry(cat.iconKey,cat.iconGroup)?.name||'Icono seleccionado'):'Seleccionar Icono')}</strong><small>Elige entre ${COLOR_ICON_ENTRIES.length} iconos · Funciona sin Internet</small></span><span class="bank-edit-arrow">›</span></button>${parentSelect}<button class="primary" type="submit">${cat?'Guardar cambios':'Crear categoría'}</button>${cat?`<button class="secondary danger" type="button" onclick="deleteCategory('${cat.id}')">Eliminar esta categoría</button>`:''}</form>`);
   document.getElementById('cat-name')?.focus();
 }
-// Solo ordena carpetas hermanas: no altera parentescos, objetos, iconos ni préstamos.
-function moveCategory(id,direction){
- const cat=getCat(id);
- if(!cat||![1,-1].includes(direction))return;
- const siblings=categories.filter(c=>c.parentId===cat.parentId);
- const index=siblings.findIndex(c=>c.id===id);
- const other=siblings[index+direction];
- if(index<0||!other)return;
- const a=categories.findIndex(c=>c.id===cat.id);
- const b=categories.findIndex(c=>c.id===other.id);
- if(a<0||b<0)return;
- [categories[a],categories[b]]=[categories[b],categories[a]];
- if(!persist()){
-  [categories[a],categories[b]]=[categories[b],categories[a]];
-  toast('No se pudo guardar el nuevo orden.');return;
+// La posición solo se cambia entre categorías del MISMO nivel, sin alterar el árbol.
+function commitCategoryOrder(ids,parentId){
+ const slots=[],byId=new Map();
+ categories.forEach((c,i)=>{if(c.parentId===parentId){slots.push(i);byId.set(c.id,c)}});
+ if(ids.length!==slots.length||new Set(ids).size!==slots.length||ids.some(id=>!byId.has(id)))return false;
+ const previous=categories.slice();
+ if(ids.every((id,i)=>previous[slots[i]].id===id))return true;
+ ids.forEach((id,i)=>{categories[slots[i]]=byId.get(id)});
+ if(!persist()){categories=previous;toast('No se pudo guardar el orden.');return false}
+ return true;
+}
+// Pulsación mantenida durante 420 ms; el gesto de desplazarse por la página sigue funcionando.
+let categoryDrag=null,categoryLastTouch=0,categorySuppressClickUntil=0;
+function beginCategoryHold(row,x,y,kind,touchId=null){
+ if(categoryDrag||!row||!row.closest('#category-sort-list'))return;
+ const list=row.parentElement;
+ if(list.querySelectorAll('.cat-sort-row').length<2)return;
+ categoryDrag={row,list,x,y,startX:x,startY:y,kind,touchId,active:false,ghost:null,raf:0,timer:0};
+ categoryDrag.timer=setTimeout(()=>activateCategoryHold(),420);
+}
+function activateCategoryHold(){
+ const d=categoryDrag;if(!d||d.active||!document.body.contains(d.row))return;
+ d.active=true;
+ const box=d.row.getBoundingClientRect();
+ d.ghost=d.row.cloneNode(true);
+ d.ghost.className='cat-sort-row cat-drag-ghost';
+ d.ghost.style.left=box.left+'px';
+ d.ghost.style.top=box.top+'px';
+ d.ghost.style.width=box.width+'px';
+ d.ghost.style.height=box.height+'px';
+ d.ghost.setAttribute('aria-hidden','true');
+ d.row.classList.add('cat-drag-origin');
+ document.body.classList.add('category-is-dragging');
+ document.body.appendChild(d.ghost);
+ categorySuppressClickUntil=Date.now()+1200;
+ try{navigator.vibrate?.(18)}catch(_){}
+ categoryDragMove(d.x,d.y);
+}
+function previewCategoryReorder(y){
+ const d=categoryDrag;if(!d||!d.active)return;
+ const others=[...d.list.children].filter(el=>el!==d.row&&el.classList.contains('cat-sort-row'));
+ const before=others.find(el=>y<el.getBoundingClientRect().top+el.getBoundingClientRect().height/2);
+ if(before){if(d.row.nextElementSibling!==before)d.list.insertBefore(d.row,before)}
+ else if(d.list.lastElementChild!==d.row)d.list.appendChild(d.row);
+}
+function categoryDragMove(x,y){
+ const d=categoryDrag;if(!d)return;d.x=x;d.y=y;
+ if(!d.active)return;
+ d.ghost.style.transform='translate3d('+(x-d.startX)+'px,'+(y-d.startY)+'px,0)';
+ previewCategoryReorder(y);
+ if(!d.raf)d.raf=requestAnimationFrame(autoScrollCategoryDrag);
+}
+function autoScrollCategoryDrag(){
+ const d=categoryDrag;if(!d||!d.active)return;
+ d.raf=0;
+ const winHeight=window.innerHeight||document.documentElement.clientHeight,margin=78;
+ let dy=0;
+ if(d.y<margin)dy=-Math.min(11,(margin-d.y)*.17);
+ else if(d.y>winHeight-margin-64)dy=Math.min(11,(d.y-(winHeight-margin-64))*.17);
+ if(dy){window.scrollBy(0,dy);previewCategoryReorder(d.y)}
+ if(d.active)d.raf=requestAnimationFrame(autoScrollCategoryDrag);
+}
+function endCategoryHold(save){
+ const d=categoryDrag;if(!d)return;
+ categoryDrag=null;
+ clearTimeout(d.timer);
+ if(d.raf)cancelAnimationFrame(d.raf);
+ if(!d.active)return;
+ d.ghost?.remove();
+ d.row.classList.remove('cat-drag-origin');
+ document.body.classList.remove('category-is-dragging');
+ categorySuppressClickUntil=Date.now()+750;
+ if(save){
+  const cat=getCat(d.row.dataset.catId);
+  if(cat){
+   const ids=[...d.list.children].filter(el=>el.classList.contains('cat-sort-row')).map(el=>el.dataset.catId);
+   const prevIds=categories.filter(c=>c.parentId===cat.parentId).map(c=>c.id);
+   if(ids.join('|')!==prevIds.join('|')&&commitCategoryOrder(ids,cat.parentId)){
+    render();toast('Orden guardado');return;
+   }
+  }
  }
  render();
- const buttons=[...document.querySelectorAll('.cat-sort-button')];
- const next=buttons.find(btn=>btn.dataset.catId===id&&Number(btn.dataset.direction)===direction&&!btn.disabled)
-       ||buttons.find(btn=>btn.dataset.catId===id&&!btn.disabled);
- try{next?.focus({preventScroll:true})}catch(_){}
 }
+// Touch listeners no pasivos únicamente en movimiento: permiten bloquear el scroll
+// cuando YA se ha mantenido pulsado; un desplazamiento normal cancela el arrastre.
+document.addEventListener('touchstart',e=>{
+ categoryLastTouch=Date.now();
+ if(categoryDrag||e.touches.length!==1)return;
+ const row=e.target.closest?.('.cat-sort-row');
+ const t=e.changedTouches[0];
+ if(row&&t)beginCategoryHold(row,t.clientX,t.clientY,'touch',t.identifier);
+},{passive:true});
+document.addEventListener('touchmove',e=>{
+ const d=categoryDrag;if(!d||d.kind!=='touch')return;
+ const t=Array.from(e.changedTouches).find(t=>t.identifier===d.touchId);
+ if(!t)return;
+ if(!d.active){
+  if(Math.hypot(t.clientX-d.startX,t.clientY-d.startY)>10)endCategoryHold(false);
+  return;
+ }
+ e.preventDefault();
+ categoryDragMove(t.clientX,t.clientY);
+},{passive:false});
+document.addEventListener('touchend',e=>{
+ const d=categoryDrag;if(!d||d.kind!=='touch')return;
+ if(Array.from(e.changedTouches).some(t=>t.identifier===d.touchId))endCategoryHold(true);
+},{passive:true});
+document.addEventListener('touchcancel',e=>{
+ const d=categoryDrag;if(!d||d.kind!=='touch')return;
+ if(Array.from(e.changedTouches).some(t=>t.identifier===d.touchId))endCategoryHold(false);
+},{passive:true});
+document.addEventListener('mousedown',e=>{
+ if(e.button!==0||categoryDrag||Date.now()-categoryLastTouch<900)return;
+ const row=e.target.closest?.('.cat-sort-row');
+ if(row)beginCategoryHold(row,e.clientX,e.clientY,'mouse');
+});
+document.addEventListener('mousemove',e=>{
+ const d=categoryDrag;if(!d||d.kind!=='mouse')return;
+ if(!d.active&&Math.hypot(e.clientX-d.startX,e.clientY-d.startY)>7){
+  clearTimeout(d.timer);activateCategoryHold();
+ }
+ if(d.active){e.preventDefault();categoryDragMove(e.clientX,e.clientY)}
+});
+document.addEventListener('mouseup',()=>{
+ if(categoryDrag?.kind==='mouse')endCategoryHold(true);
+});
+document.addEventListener('click',e=>{
+ if(Date.now()<categorySuppressClickUntil&&e.target.closest?.('.cat-sort-row')){
+  e.preventDefault();e.stopImmediatePropagation();
+ }
+},true);
+document.addEventListener('contextmenu',e=>{
+ if(e.target.closest?.('.cat-sort-row'))e.preventDefault();
+});
 function saveCategory(e,editId,parentId){
   e.preventDefault();const name=document.getElementById('cat-name').value.trim(), emoji=document.getElementById('cat-emoji').value||'📁', iconKey=document.getElementById('cat-iconkey')?.value||'', iconGroup=document.getElementById('cat-icongroup')?.value||'';if(!name)return showFormError('Escribe el nombre obligatorio de la categoría.','cat-name');
   const cat=editId?getCat(editId):null;const pid=cat?(document.getElementById('cat-parent').value||null):parentId;
@@ -1518,5 +1627,5 @@ render();
 renderUpdateVersion();
 try{updaterBridge()?.uiReady()}catch(_){}
 </script>
-<!-- canal V2.2.13 iconos centrados 2026-10-21 -->
+<!-- canal V2.2.14 iconos centrados 2026-10-21 -->
 </body></html>

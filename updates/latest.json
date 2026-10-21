@@ -1,6 +1,6 @@
 {
-  "revision": 1792700002,
-  "version": "V2.2.13",
-  "sha256": "772decaeb5e31750eb36be21490172f94433452a2f49d1172a9a1aae596cf37b",
-  "notes": "Subir y bajar categorías y subcategorías con flechas dentro del mismo nivel. Se guarda el orden y se mantiene en las copias de seguridad; no cambia objetos, iconos ni carpetas internas."
+  "revision": 1792700003,
+  "version": "V2.2.14",
+  "sha256": "69f38fcf20c40941c152d5af1039d8390b8bccd3f846602ab47d94d5090022c8",
+  "notes": "Categorías y subcategorías: mantén pulsada una carpeta y arrástrala para cambiar su orden. Sin flechas. Guarda los cambios y respeta iconos, objetos, subcategorías y copias de seguridad."
 }
