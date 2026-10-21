@@ -1,6 +1,6 @@
 {
-  "revision": 1792538400,
-  "version": "V2.2.10",
-  "sha256": "dfa57c44fcb43dbccdd3190f20c5d4dba2d1cdc67c8bde8932add77c3200154e",
-  "notes": "Iconos del banco perfectamente centrados en las tarjetas de Categorías. Se mantienen inventario, copias de seguridad y todas las funciones de V2.2.9."
+  "revision": 1792613160,
+  "version": "V2.2.11",
+  "sha256": "db4f40cc4b44450aa5396dca111b5b8e6fef1cdbf23b43c22b3ab388dafde1ce",
+  "notes": "Campos de texto: autocorrección y sugerencias del teclado activadas, nombres de objetos sin sugerencia de perfil de Google. Sin cambios en inventario, copias de seguridad, iconos ni aspecto."
 }
