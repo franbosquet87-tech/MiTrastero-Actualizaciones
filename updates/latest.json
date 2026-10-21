@@ -1,6 +1,6 @@
 {
-  "revision": 1792700001,
-  "version": "V2.2.12",
-  "sha256": "830c2e4f238cb260f0d03c5023f5bcb9cb7e584e8c692071e6421db8ee33817f",
-  "notes": "Lugares: el alta de objetos solo selecciona ubicaciones existentes, elección persistente de lugar predeterminado en Lugares, cambio automático tras renombrar/eliminar y compatibilidad con copias anteriores."
+  "revision": 1792700002,
+  "version": "V2.2.13",
+  "sha256": "772decaeb5e31750eb36be21490172f94433452a2f49d1172a9a1aae596cf37b",
+  "notes": "Subir y bajar categorías y subcategorías con flechas dentro del mismo nivel. Se guarda el orden y se mantiene en las copias de seguridad; no cambia objetos, iconos ni carpetas internas."
 }
