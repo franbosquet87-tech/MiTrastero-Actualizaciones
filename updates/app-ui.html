@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f3f5f8">
-<title>Mi Trastero · V2.2.14</title>
+<title>Mi Trastero · V2.2.16</title>
 <style>
 :root{--bg:#f5f6f3;--ink:#142b28;--mut:#7c8983;--green:#123c34;--green2:#1e6557;--line:#e7ece7;--accent:#d9f2ad;--orange:#f1ba83;--white:#fff;--shadow:0 12px 35px rgba(33,64,47,.07)}
 *{box-sizing:border-box}html{background:#e9efec}body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);-webkit-tap-highlight-color:transparent}button,input,select{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #8db2a2;outline-offset:2px}button{border:0}svg{display:inline-block;vertical-align:middle;flex-shrink:0}.icon{width:21px;height:21px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.tiny{width:16px;height:16px}.app{max-width:480px;margin:auto;background:var(--bg);min-height:100dvh;box-shadow:0 12px 60px #153b2318;position:relative}.page{padding:0 22px 112px;min-height:80vh;animation:appear .24s ease}@keyframes appear{from{opacity:.1;transform:translateY(8px)}to{opacity:1;transform:none}}
@@ -1212,7 +1212,7 @@ function details(id){
  const stateColor=borrowed?'#946139':away?'#526a9a':'#435f7f';
  const extra=hasPartial(i)?`<div class="field-info"><small>EN CASA</small><strong>${partialHome(i)}</strong></div><div class="field-info"><small>EN TRÁNSITO</small><strong>${partialAway(i)}</strong></div>`:away?`<div class="field-info"><small>UBICACIÓN ACTUAL (TEMPORAL)</small><strong>${esc(i.transit.note||'Sin destino indicado')}</strong></div>`:'';
  const action=borrowed?`<button class="primary" onclick="returnItem('${i.id}')">${icon('check','tiny')} Marcar como devuelto</button>`:hasPartial(i)?`<button class="primary" onclick="partialTransitManage('${esc(i.id)}')">Gestionar cantidades y devoluciones</button>`:away?`<button class="primary" type="button" data-transit-action="manage" data-object-id="${esc(i.id)}">${icon('refresh','tiny')} Gestionar tránsito o devolución</button>`:`<button class="primary" type="button" data-transit-action="open-start" data-object-id="${esc(i.id)}">${icon('refresh','tiny')} Marcar en tránsito</button>`;
- const loanAction=borrowed?'':`<button class="secondary" onclick="lendItem('${i.id}')">${icon('loan','tiny')} Prestar a alguien</button>`;
+ const loanAction=borrowed||hasPartial(i)?'':`<button class="secondary" onclick="lendItem('${i.id}')">${icon('loan','tiny')} Prestar a alguien</button>`;
  openModal(`<div class="sheet-top"><h2>Ficha del objeto</h2><button class="close" onclick="closeModal()" aria-label="Cerrar">${icon('close')}</button></div>
  <div class="detail-image">${i.photo?`<img src="${esc(i.photo)}" onerror="this.style.display='none'" alt="Foto completa de ${esc(i.name)}">`:icon('box','placeholder')}</div>
  <span class="detail-tag">${esc(catOf(i))}</span><h3 class="detail-title">${esc(i.name)}</h3><p class="desc">${esc(i.notes||'Sin notas adicionales.')}</p>
