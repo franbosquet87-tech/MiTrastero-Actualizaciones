@@ -1,6 +1,6 @@
 {
-  "revision": 1792700003,
-  "version": "V2.2.14",
-  "sha256": "69f38fcf20c40941c152d5af1039d8390b8bccd3f846602ab47d94d5090022c8",
-  "notes": "Categorías y subcategorías: mantén pulsada una carpeta y arrástrala para cambiar su orden. Sin flechas. Guarda los cambios y respeta iconos, objetos, subcategorías y copias de seguridad."
+  "revision": 1792700004,
+  "version": "V2.2.15",
+  "sha256": "e1ac3c53e948c0f0851439a1a53bdcc1417c1c148dea269efabc4beede97f7b5",
+  "notes": "Buscador principal corregido: busca exclusivamente por el nombre del objeto, sin incluir coincidencias de categorías, ubicaciones ni notas. Se conservan las demás funciones."
 }
