@@ -1,6 +1,6 @@
 {
-  "revision": 1792700004,
-  "version": "V2.2.15",
-  "sha256": "e1ac3c53e948c0f0851439a1a53bdcc1417c1c148dea269efabc4beede97f7b5",
-  "notes": "Buscador principal corregido: busca exclusivamente por el nombre del objeto, sin incluir coincidencias de categorías, ubicaciones ni notas. Se conservan las demás funciones."
+  "revision": 1792700005,
+  "version": "V2.2.16",
+  "sha256": "b9d658c126634343edf6bfb72a90837b72f7230f0ef8713125a218fe0a23c979",
+  "notes": "Movimientos parciales: salidas por cantidad con destino y responsable, devoluciones desde cada salida, historial y conservación del total. Compatible con tránsitos antiguos."
 }
