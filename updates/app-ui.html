@@ -855,7 +855,10 @@ function changePlaceChoice(select){
  if(custom)input?.focus();
 }
 
-function inTransit(i){return !!i.transit && !i.loan}
+function inTransit(i){return !i.loan && (!!i.transit || (Array.isArray(i.partialTransit)&&i.partialTransit.some(x=>x.qty>0)))}
+function partialAway(i){return (Array.isArray(i.partialTransit)?i.partialTransit:[]).reduce((n,x)=>n+(Number(x.qty)||0),0)}
+function partialHome(i){return Math.max(0,Number(i.qty||0)-partialAway(i))}
+function hasPartial(i){return Array.isArray(i.partialTransit)&&i.partialTransit.some(x=>x.qty>0)}
 function countTransit(){return items.filter(inTransit).length}
 function formattedHomePlace(i){return i.place+(i.location?' · '+i.location:'')}
 // V2.2: historial independiente del tránsito ACTIVO. Se conserva al terminarlo.
@@ -878,7 +881,7 @@ function knownTransitMovements(i){
 function movementRecord(kind,from,to){return {kind,from:String(from||''),to:String(to||''),at:new Date().toISOString()};}
 function appendMovement(i,kind,from,to){i.transitLog=[...knownTransitMovements(i),movementRecord(kind,from,to)];}
 function revertMovementLog(i,oldLog){if(oldLog===undefined)delete i.transitLog;else i.transitLog=oldLog;}
-function transitLogLabel(kind){return ({inicio:'Inicio del tránsito',nuevo:'Nuevo destino temporal',regreso:'Regreso al lugar habitual',habitual:'Nuevo lugar habitual',prestamo:'Salida por préstamo'})[kind]||'Movimiento';}
+function transitLogLabel(kind){return ({inicio:'Inicio del tránsito',nuevo:'Nuevo destino temporal',regreso:'Regreso al lugar habitual',habitual:'Nuevo lugar habitual',prestamo:'Salida por préstamo',salida_parcial:'Salida parcial',devolucion_parcial:'Devolución parcial'})[kind]||'Movimiento';}
 function transitLogDate(value){
  if(!value)return 'Fecha no registrada';
  if(/^\d{4}-\d{2}-\d{2}$/.test(value)){const [year,month,day]=value.split('-');return day+'/'+month+'/'+year+' · hora no registrada';}
@@ -915,7 +918,7 @@ function goToLocation(index){locationFilter=places()[index]||null;filter='Todos'
 function thumb(i){return `<span class="thumb">${i.photo?`<img src="${esc(i.photo)}" loading="lazy" onerror="this.style.display='none'" alt="Foto de ${esc(i.name)}">`:icon('box','placeholder')}</span>`}
 function itemCard(i){
  const borrowed=!!i.loan,away=inTransit(i);
- const path=borrowed?'Ubicación habitual: '+formattedHomePlace(i):away?`Ahora: ${i.transit.note||'Destino sin indicar'} · Habitual: ${formattedHomePlace(i)}`:formattedHomePlace(i);
+ const path=borrowed?'Ubicación habitual: '+formattedHomePlace(i):hasPartial(i)?`${partialHome(i)} en ${formattedHomePlace(i)} · ${partialAway(i)} en tránsito`:away?`Ahora: ${i.transit.note||'Destino sin indicar'} · Habitual: ${formattedHomePlace(i)}`:formattedHomePlace(i);
  const status=borrowed?'↗ Prestado':away?'↗ En tránsito':'✓ Disponible';
  return `<button type="button" class="item" onclick="details('${i.id}')">${thumb(i)}<span class="info"><strong>${esc(i.name)}</strong><span class="path">${esc(path)}</span><span class="item-category-path">${esc(catOf(i))}</span><span class="item-measure">${esc(objectSummaryLabel(i))}</span><span class="pill ${borrowed?'loan':away?'transit':''}">${status}</span></span>${icon('next','chevron')}</button>`
 }
@@ -1193,6 +1196,7 @@ function setSearch(s){search=s;const el=document.getElementById('object-list');c
 function closeModal(){document.getElementById('modal').innerHTML=''}
 function openModal(content){document.getElementById('modal').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="sheet"><div class="handle"></div><div id="modal-validation" role="alert" aria-live="assertive" hidden></div>${content}</div></div>`}
 function transitTimeline(i){
+ if(hasPartial(i))return `<div class="transit-timeline"><strong>Salidas pendientes</strong>${i.partialTransit.map(x=>`<div class="transit-step"><span class="transit-dot">${esc(x.qty)}</span><span><strong>${esc(x.where)}</strong><small>${esc(x.who||'Sin responsable')}</small></span></div>`).join('')}</div>`;
  if(!inTransit(i))return '';
  const route=[{place:formattedHomePlace(i),caption:'Ubicación habitual'}];
  for(const stop of (Array.isArray(i.transit.history)?i.transit.history:[])){
@@ -1206,8 +1210,8 @@ function details(id){
  const i=items.find(v=>v.id===id);if(!i)return;
  const away=inTransit(i), borrowed=!!i.loan, s=objectState(i);
  const stateColor=borrowed?'#946139':away?'#526a9a':'#435f7f';
- const extra=away?`<div class="field-info"><small>UBICACIÓN ACTUAL (TEMPORAL)</small><strong>${esc(i.transit.note||'Sin destino indicado')}</strong></div>`:'';
- const action=borrowed?`<button class="primary" onclick="returnItem('${i.id}')">${icon('check','tiny')} Marcar como devuelto</button>`:away?`<button class="primary" type="button" data-transit-action="manage" data-object-id="${esc(i.id)}">${icon('refresh','tiny')} Gestionar tránsito o devolución</button>`:`<button class="primary" type="button" data-transit-action="open-start" data-object-id="${esc(i.id)}">${icon('refresh','tiny')} Marcar en tránsito</button>`;
+ const extra=hasPartial(i)?`<div class="field-info"><small>EN CASA</small><strong>${partialHome(i)}</strong></div><div class="field-info"><small>EN TRÁNSITO</small><strong>${partialAway(i)}</strong></div>`:away?`<div class="field-info"><small>UBICACIÓN ACTUAL (TEMPORAL)</small><strong>${esc(i.transit.note||'Sin destino indicado')}</strong></div>`:'';
+ const action=borrowed?`<button class="primary" onclick="returnItem('${i.id}')">${icon('check','tiny')} Marcar como devuelto</button>`:hasPartial(i)?`<button class="primary" onclick="partialTransitManage('${esc(i.id)}')">Gestionar cantidades y devoluciones</button>`:away?`<button class="primary" type="button" data-transit-action="manage" data-object-id="${esc(i.id)}">${icon('refresh','tiny')} Gestionar tránsito o devolución</button>`:`<button class="primary" type="button" data-transit-action="open-start" data-object-id="${esc(i.id)}">${icon('refresh','tiny')} Marcar en tránsito</button>`;
  const loanAction=borrowed?'':`<button class="secondary" onclick="lendItem('${i.id}')">${icon('loan','tiny')} Prestar a alguien</button>`;
  openModal(`<div class="sheet-top"><h2>Ficha del objeto</h2><button class="close" onclick="closeModal()" aria-label="Cerrar">${icon('close')}</button></div>
  <div class="detail-image">${i.photo?`<img src="${esc(i.photo)}" onerror="this.style.display='none'" alt="Foto completa de ${esc(i.name)}">`:icon('box','placeholder')}</div>
@@ -1219,10 +1223,47 @@ function details(id){
  ${i.dimensions?`<div class="field-info"><small>OTRAS DIMENSIONES / DETALLES</small><strong>${esc(i.dimensions)}</strong></div>`:''}
  <div class="field-info"><small>ESTADO ACTUAL</small><strong style="color:${stateColor}">${esc(s)}${borrowed?' · '+esc(i.loan.to):''}</strong></div>${extra}</div>
  ${away?transitTimeline(i):''}${away?`<p class="transit-helper">Puedes iniciar otro tránsito sin modificar el lugar habitual, devolverlo a casa o asignarle un nuevo lugar fijo.</p>`:''}
- ${action}<button class="secondary" type="button" onclick="viewTransitHistory('${i.id}')">${icon('refresh','tiny')} Historial de tránsitos (${knownTransitMovements(i).length})</button>${loanAction}<button class="secondary" onclick="editItem('${i.id}')">${icon('pencil','tiny')} Editar ficha</button><button class="secondary danger" onclick="deleteItem('${i.id}')">Eliminar objeto</button>`)
+ ${action}${!borrowed&&!i.transit&&!isLegacyMeasured(i)&&Number.isSafeInteger(Number(i.qty))?`<button class="secondary" type="button" onclick="partialTransitManage('${esc(i.id)}')">Mover unidades por separado</button>`:''}<button class="secondary" type="button" onclick="viewTransitHistory('${i.id}')">${icon('refresh','tiny')} Historial de tránsitos (${knownTransitMovements(i).length})</button>${loanAction}<button class="secondary" onclick="editItem('${i.id}')">${icon('pencil','tiny')} Editar ficha</button><button class="secondary danger" onclick="deleteItem('${i.id}')">Eliminar objeto</button>`)
 }
+
+/* V2.2.16 - movimientos parciales: i.qty siempre es total, i.partialTransit son salidas pendientes */
+function partialTransitManage(id){
+ const i=items.find(x=>x.id===id);if(!i)return;
+ if(i.loan||i.transit||isLegacyMeasured(i)){appAlert('Para usar cantidades parciales, termina primero el préstamo o tránsito anterior. Los objetos con unidades antiguas deben convertirse a unidades.');return;}
+ const lots=Array.isArray(i.partialTransit)?i.partialTransit.filter(x=>Number(x.qty)>0):[];
+ const home=partialHome(i);
+ openModal('<div class="sheet-top"><h2>Movimientos parciales</h2><button class="close" onclick="closeModal()">×</button></div>'+
+ '<p class="desc"><b>'+esc(i.name)+'</b> · Total '+esc(i.qty)+' · En casa <b>'+home+'</b> · Fuera <b>'+partialAway(i)+'</b></p>'+
+ (home>0?'<div class="section"><h3>Sacar unidades</h3></div><label class="label">Cantidad (máximo '+home+')</label><input class="field" id="partial-out-qty" type="number" min="1" max="'+home+'" step="1" value="1"><label class="label">Destino *</label><input class="field" id="partial-out-where" maxlength="100" placeholder="Ej. Obra de Aguadulce"><label class="label">Responsable (opcional)</label><input class="field" id="partial-out-who" maxlength="100" placeholder="Ej. Juan"><button class="primary" onclick="partialTransitOut('+JSON.stringify(id)+')">Registrar salida</button>':'<p class="desc">Todas las unidades están fuera.</p>')+
+ '<div class="section"><h3>Salidas pendientes</h3></div>'+
+ (lots.length?lots.map(x=>'<div class="transit-step"><span class="transit-dot">'+esc(x.qty)+'</span><span><strong>'+esc(x.where)+'</strong><small>'+esc(x.who||'Sin responsable')+' · '+esc(x.since||'')+'</small><label class="label">Devolver de esta salida</label><input class="field" id="partial-return-'+esc(x.id)+'" type="number" min="1" max="'+esc(x.qty)+'" step="1" value="1"><button class="secondary" onclick="partialTransitBack('+JSON.stringify(id)+','+JSON.stringify(x.id)+')">Devolver desde '+esc(x.where)+'</button></span></div>').join(''):'<p class="desc">No hay salidas pendientes.</p>')+
+ '<button class="secondary" onclick="details('+JSON.stringify(id)+')">Volver a la ficha</button>');
+}
+function partialTransitOut(id){
+ clearFormError();const i=items.find(x=>x.id===id);if(!i||i.loan||i.transit||isLegacyMeasured(i))return;
+ const n=Number(document.getElementById('partial-out-qty')?.value),where=document.getElementById('partial-out-where')?.value.trim(),who=document.getElementById('partial-out-who')?.value.trim()||'';
+ if(!Number.isSafeInteger(n)||n<1||n>partialHome(i))return showFormError('Cantidad no válida o superior a la disponible.','partial-out-qty');
+ if(!where)return showFormError('Indica el destino.','partial-out-where');
+ const old=i.partialTransit,log=i.transitLog;
+ const lot={id:'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),qty:n,where,who,since:new Date().toISOString()};
+ i.partialTransit=[...(old||[]),lot];appendMovement(i,'salida_parcial',formattedHomePlace(i),where+' ('+n+' unidades)'+(who?' · '+who:''));
+ if(!persist()){i.partialTransit=old;revertMovementLog(i,log);return showFormError('No se ha podido guardar la salida.');}
+ partialTransitManage(id);render();toast(n+' unidades en tránsito');
+}
+function partialTransitBack(id,lotId){
+ clearFormError();const i=items.find(x=>x.id===id);const lot=i?.partialTransit?.find(x=>x.id===lotId);if(!lot)return showFormError('Esta salida ya no está pendiente.');
+ const n=Number(document.getElementById('partial-return-'+lotId)?.value);
+ if(!Number.isSafeInteger(n)||n<1||n>lot.qty)return showFormError('La devolución debe estar entre 1 y '+lot.qty+'.');
+ const old=i.partialTransit,log=i.transitLog;
+ i.partialTransit=old.map(x=>x.id===lotId?{...x,qty:x.qty-n}:x).filter(x=>x.qty>0);
+ appendMovement(i,'devolucion_parcial',lot.where+' ('+n+' unidades)'+(lot.who?' · '+lot.who:''),formattedHomePlace(i));
+ if(!persist()){i.partialTransit=old;revertMovementLog(i,log);return showFormError('No se ha podido guardar la devolución.');}
+ partialTransitManage(id);render();toast(n+' unidades devueltas desde '+lot.where);
+}
+
 function markTransit(id){
  const i=items.find(v=>v.id===id);
+ if(i&&hasPartial(i)){partialTransitManage(id);return;}
  if(!i){appAlert('No se encuentra el objeto. Cierra la ficha y vuelve a abrirla.','No se puede iniciar el tránsito');return;}
  if(i.loan){appAlert('Este objeto figura como prestado. Primero registra su devolución y después inicia el tránsito.','Objeto prestado');return;}
  if(inTransit(i)){finishTransit(id);return;}
@@ -1262,7 +1303,7 @@ function openTransitStep(i,heading,content){
  <div class="transit-current"><b>${esc(i.name)}</b><br>Habitual: ${esc(formattedHomePlace(i))}<br>Ubicación temporal actual: <b>${esc(i.transit.note)}</b></div>${content}`);
 }
 function finishTransit(id){
- const i=items.find(v=>v.id===id);if(!i||!inTransit(i))return showFormError('El objeto no tiene un tránsito activo. Vuelve a abrir su ficha.');
+ const i=items.find(v=>v.id===id);if(i&&hasPartial(i)){partialTransitManage(id);return;}if(!i||!inTransit(i))return showFormError('El objeto no tiene un tránsito activo. Vuelve a abrir su ficha.');
  openTransitStep(i,'Siguiente movimiento',`
  <p class="desc">Elige qué quieres hacer con el objeto. Solo se cambiará su lugar habitual si eliges la tercera opción.</p>
  <button type="button" class="transit-action-btn" data-transit-action="open-next" data-object-id="${esc(id)}">${icon('refresh')}<span><strong>Otro tránsito temporal</strong><small>Llevarlo a otro sitio sin cambiar su ubicación habitual.</small></span>${icon('next','tiny')}</button>
@@ -1379,6 +1420,8 @@ function saveItem(e,id){
  if(!Number.isSafeInteger(qty)||qty<=0||qty>999999){showSaveError('Indica cuántas unidades tienes. Debe ser un número entero mayor que cero, por ejemplo 1 o 3.','qty');return false;}
  if(rawMeasure!==''&&(!Number.isFinite(measureValue)||measureValue<=0||measureValue>999999)){showSaveError('La medida debe ser un número positivo. Puedes usar decimales con coma, por ejemplo 2,5.','measureValue');return false;}
  if(!place){showSaveError('Selecciona un espacio o escribe el nombre del lugar nuevo.','place');return false;}
+ const activePartial=id?items.find(v=>v.id===id):null;
+ if(activePartial&&hasPartial(activePartial)&&qty<partialAway(activePartial)){showSaveError('La cantidad total no puede ser inferior a las unidades que siguen en tránsito.','qty');return false;}
  const data={name,catId,place,location:String(fd.get('location')||'').trim(),qty,qtyUnit:'ud',measureValue,measureUnit,dimensions:String(fd.get('dimensions')||'').trim(),notes:String(fd.get('notes')||'').trim()};
  const previousItems=items.map(v=>({...v}));
  const previousPlaces=savedPlaces.slice();
