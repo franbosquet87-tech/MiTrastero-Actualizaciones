@@ -1,6 +1,6 @@
 {
-  "revision": 1792700005,
+  "revision": 1792700006,
   "version": "V2.2.16",
-  "sha256": "b9d658c126634343edf6bfb72a90837b72f7230f0ef8713125a218fe0a23c979",
-  "notes": "Movimientos parciales: salidas por cantidad con destino y responsable, devoluciones desde cada salida, historial y conservación del total. Compatible con tránsitos antiguos."
+  "sha256": "7254a547cfc598c1c96ddc4d2d03c1c1569fb2e552f095cfbd6242169d936551",
+  "notes": "Corrección de los botones de movimientos parciales: registrar salidas y devolver unidades por destino."
 }
