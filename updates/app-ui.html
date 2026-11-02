@@ -1227,6 +1227,7 @@ function details(id){
 }
 
 /* V2.2.16 - movimientos parciales: i.qty siempre es total, i.partialTransit son salidas pendientes */
+function partialJsArg(value){return JSON.stringify(String(value)).replace(/"/g,'&quot;')}
 function partialTransitManage(id){
  const i=items.find(x=>x.id===id);if(!i)return;
  if(i.loan||i.transit||isLegacyMeasured(i)){appAlert('Para usar cantidades parciales, termina primero el préstamo o tránsito anterior. Los objetos con unidades antiguas deben convertirse a unidades.');return;}
@@ -1234,10 +1235,10 @@ function partialTransitManage(id){
  const home=partialHome(i);
  openModal('<div class="sheet-top"><h2>Movimientos parciales</h2><button class="close" onclick="closeModal()">×</button></div>'+
  '<p class="desc"><b>'+esc(i.name)+'</b> · Total '+esc(i.qty)+' · En casa <b>'+home+'</b> · Fuera <b>'+partialAway(i)+'</b></p>'+
- (home>0?'<div class="section"><h3>Sacar unidades</h3></div><label class="label">Cantidad (máximo '+home+')</label><input class="field" id="partial-out-qty" type="number" min="1" max="'+home+'" step="1" value="1"><label class="label">Destino *</label><input class="field" id="partial-out-where" maxlength="100" placeholder="Ej. Obra de Aguadulce"><label class="label">Responsable (opcional)</label><input class="field" id="partial-out-who" maxlength="100" placeholder="Ej. Juan"><button class="primary" onclick="partialTransitOut('+JSON.stringify(id)+')">Registrar salida</button>':'<p class="desc">Todas las unidades están fuera.</p>')+
+ (home>0?'<div class="section"><h3>Sacar unidades</h3></div><label class="label">Cantidad (máximo '+home+')</label><input class="field" id="partial-out-qty" type="number" min="1" max="'+home+'" step="1" value="1"><label class="label">Destino *</label><input class="field" id="partial-out-where" maxlength="100" placeholder="Ej. Obra de Aguadulce"><label class="label">Responsable (opcional)</label><input class="field" id="partial-out-who" maxlength="100" placeholder="Ej. Juan"><button class="primary" onclick="partialTransitOut('+partialJsArg(id)+')">Registrar salida</button>':'<p class="desc">Todas las unidades están fuera.</p>')+
  '<div class="section"><h3>Salidas pendientes</h3></div>'+
- (lots.length?lots.map(x=>'<div class="transit-step"><span class="transit-dot">'+esc(x.qty)+'</span><span><strong>'+esc(x.where)+'</strong><small>'+esc(x.who||'Sin responsable')+' · '+esc(x.since||'')+'</small><label class="label">Devolver de esta salida</label><input class="field" id="partial-return-'+esc(x.id)+'" type="number" min="1" max="'+esc(x.qty)+'" step="1" value="1"><button class="secondary" onclick="partialTransitBack('+JSON.stringify(id)+','+JSON.stringify(x.id)+')">Devolver desde '+esc(x.where)+'</button></span></div>').join(''):'<p class="desc">No hay salidas pendientes.</p>')+
- '<button class="secondary" onclick="details('+JSON.stringify(id)+')">Volver a la ficha</button>');
+ (lots.length?lots.map(x=>'<div class="transit-step"><span class="transit-dot">'+esc(x.qty)+'</span><span><strong>'+esc(x.where)+'</strong><small>'+esc(x.who||'Sin responsable')+' · '+esc(x.since||'')+'</small><label class="label">Devolver de esta salida</label><input class="field" id="partial-return-'+esc(x.id)+'" type="number" min="1" max="'+esc(x.qty)+'" step="1" value="1"><button class="secondary" onclick="partialTransitBack('+partialJsArg(id)+','+partialJsArg(x.id)+')">Devolver desde '+esc(x.where)+'</button></span></div>').join(''):'<p class="desc">No hay salidas pendientes.</p>')+
+ '<button class="secondary" onclick="details('+partialJsArg(id)+')">Volver a la ficha</button>');
 }
 function partialTransitOut(id){
  clearFormError();const i=items.find(x=>x.id===id);if(!i||i.loan||i.transit||isLegacyMeasured(i))return;
