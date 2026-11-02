@@ -945,13 +945,13 @@ function filteredItems(){
  const ids=filter==='Todos'?null:descendants(filter);
  return items.filter(i=>(!ids||ids.has(i.catId))&&(locationFilter===null||i.place===locationFilter)&&
  (statusFilter==='all'||(statusFilter==='transit'&&inTransit(i))||(statusFilter==='loan'&&!!i.loan)||(statusFilter==='home'&&!i.loan&&!inTransit(i)))&&
- (!search||`${i.name} ${i.place} ${i.location||''} ${i.transit?.note||''} ${catOf(i)} ${i.notes}`.toLowerCase().includes(search.toLowerCase())))
+ (!search||String(i.name||'').toLowerCase().includes(search.toLowerCase())))
 }
 function renderInventory(){
  const roots=categories.filter(c=>c.parentId===null);
  const statusChoices=[['all','Todos'],['home','En su sitio'],['transit','En tránsito'],['loan','Prestados']];
  return `<div class="page"><div class="headrow" style="margin-top:13px"><div><div class="eyebrow">TU INVENTARIO</div><h2 class="page-title">Mis objetos</h2></div><button class="plus" onclick="newItem()">${icon('plus','tiny')} Añadir</button></div><p class="sub">Encuentra lo que necesites sin perder tiempo.</p>
- <label class="input-search">${icon('search')}<input id="search-input" type="search" placeholder="Buscar por nombre, categoría o lugar..." oninput="setSearch(this.value)" value="${esc(search)}" autocomplete="off" autocorrect="on" spellcheck="true" autocapitalize="none"></label>
+ <label class="input-search">${icon('search')}<input id="search-input" type="search" placeholder="Buscar por nombre del objeto..." oninput="setSearch(this.value)" value="${esc(search)}" autocomplete="off" autocorrect="on" spellcheck="true" autocapitalize="none"></label>
  <div class="status-pills" aria-label="Filtrar objetos por estado">${statusChoices.map(([v,label])=>`<button class="status-chip ${statusFilter===v?'on':''}" onclick="setStatusFilter('${v}')">${label}</button>`).join('')}</div>
  <div class="pills"><button class="filter ${filter==='Todos'?'active':''}" onclick="setFilter('Todos')">Todas las categorías</button>${roots.map(c=>`<button class="filter ${filter===c.id?'active':''}" onclick="setFilter('${c.id}')">${esc(c.name)}</button>`).join('')}</div>
  ${filter!=='Todos'?`<button class="cat-ghost" style="margin-bottom:12px" onclick="navigate('categories')">${icon('layers','tiny')} ${esc(catPath(filter)||'Categorías')} · Ver carpeta</button>`:''}
